@@ -7,7 +7,6 @@ import pygame as pg
 
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
-NUM_OF_BOMBS = 0
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -192,80 +191,125 @@ class Explosion:
 
 
 def main():
-    pg.display.set_caption("たたかえ！こうかとん")
+    pg.display.set_caption("シューティングこうかとん")
+    NUM_OF_BOMBS = 5
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bg_img2 = pg.transform.flip(bg_img, True, False)
     bg_img3 = bg_img
     bird = Bird((300, 200))
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
-    # beam = None  # ゲーム初期化時にはビームは存在しない
     beams = []  # 複数のビームを格納する
-    explosion = []  # 複数の爆発エフェクトを格納する
     score = Score()
     clock = pg.time.Clock()
     tmr = 0
-    while True:
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                return
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                # スペースキー押下でBeamクラスのインスタンス生成
-                # beam = Beam(bird)
-                beams.append(Beam(bird)) 
-
-        screen.blit(bg_img, [-tmr, 0])
-        if (tmr >= 500):
-            screen.blit(bg_img2, [-tmr+1600, 0])
-        if (tmr >= 1600):
-            screen.blit(bg_img3, [-tmr+3200, 0])
-        if (tmr >= 3199):
-            tmr = 0
-        
-        #if bomb is not None:  # 爆弾が一個の時
-        for bomb in bombs:
-            if bird.rct.colliderect(bomb.rct):
-                # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
-                fonto = pg.font.Font(None, 80)
-                txt = fonto.render("Game Over", True, (255, 0, 0))
-                screen.blit(txt, [WIDTH//2-150,HEIGHT//2])
-                bird.change_img(8, screen)
-                pg.display.update()
-                time.sleep(1)
-                return
-        
-
-        #if bomb is not None:  # 爆弾が一個の時
-        for i, bomb in enumerate(bombs):
-            for beam in beams:
-                if beam.rct.colliderect(bomb.rct):
-                    # explosion.append(Explosion(bombs[i].rct))
-                    bombs[i] = None
-                    beam = None 
-                    bird.change_img(6, screen)  # こうかとんが喜ぶエフェクト
-                    score.score += 1
-                    break
-
-        bombs = [bomb for bomb in bombs if bomb is not None]
-        beams = [beam for beam in beams if beam is not None]
+    state = "START"  # 実行時にスタート画面を表示する
 
 
-        key_lst = pg.key.get_pressed()
-        bird.update(key_lst, screen) 
-        for beam in beams:  # ビームが存在するときだけ
-            beam.update(screen)
-            if (beam.rct.left < 0) or (beam.rct.top < 0) or (WIDTH < beam.rct.right) or (HEIGHT < beam.rct.bottom):
-               del beam 
-              
-        # if bomb is not None:  # 爆弾が存在するときだけ
-        for bomb in bombs:
-            bomb.update(screen)
-        score.update(screen)
-        # for exp in explosion:
-        #     exp.update(screen)
-        pg.display.update() 
-        tmr += 5
-        clock.tick(50)
+    while True: 
+        if state == "START":
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                    state = "PLAY"  # 本編へ
+
+        # 描画
+            start = pg.Surface((WIDTH,HEIGHT))
+            start.fill((150, 255, 255))
+            start.set_alpha(150)
+            screen.blit(start,[0, 0])
+            font_title = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 60)
+            font_select = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 40)
+            font_score = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 25)
+            title_txt = font_title.render("シューティングこうかとん（仮）", True, (255, 255, 255))   
+            start_txt = font_select.render("Enter：ゲームスタート", True, (255, 255, 255))
+            explanation_txt = font_select.render("Q：操作方法", True, (255, 255, 255))
+            end_txt = font_select.render("Esc：ゲームを終了する", True, (255, 255, 255))
+            high_score_txt = font_score.render("ハイスコア：", True, (255, 255, 255))
+            screen.blit(title_txt, [HEIGHT//2-200, WIDTH//2-450])
+            screen.blit(start_txt, [HEIGHT//2-200, WIDTH//2-280])
+            screen.blit(explanation_txt, [HEIGHT//2-200, WIDTH//2-210])
+            screen.blit(end_txt, [HEIGHT//2-200, WIDTH//2-140])
+            screen.blit(high_score_txt, [HEIGHT//2+500, WIDTH//2+50])
+            pg.display.update()
+            
+
+        if state == "STOP":
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                    state = "PLAY"
+            font_stop = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
+            stop_txt = font_stop.render("一時停止中...", True, (255, 255, 255))
+            screen.blit(stop_txt, [HEIGHT//2-200, WIDTH//2-450])
+            pg.display.update()
+
+
+        if state == "PLAY":
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                    state = "STOP"
+                if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                    beams.append(Beam(bird)) 
+            
+            screen.blit(bg_img, [-tmr, 0])
+            if (tmr >= 500):
+                screen.blit(bg_img2, [-tmr+1600, 0])
+            if (tmr >= 1600):
+                screen.blit(bg_img3, [-tmr+3200, 0])
+            if (tmr >= 3199):
+                tmr = 0
+            
+            #if bomb is not None:  # 爆弾が一個の時
+            for bomb in bombs:
+                if bird.rct.colliderect(bomb.rct):
+                    # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
+                    fonto = pg.font.Font(None, 80)
+                    txt = fonto.render("Game Over", True, (255, 0, 0))
+                    screen.blit(txt, [WIDTH//2-150,HEIGHT//2])
+                    bird.change_img(8, screen)
+                    pg.display.update()
+                    time.sleep(2)
+                    state = "START"  # 初期化してスタート画面に移動する
+                    NUM_OF_BOMBS = 5
+                    bird = Bird((300, 200))
+                    bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
+                    beams = []  # 複数のビームを格納する
+                    score = Score()
+                    tmr = 0
+                    
+            for i, bomb in enumerate(bombs):
+                for beam in beams:
+                    if beam.rct.colliderect(bomb.rct):
+                        bombs[i] = None
+                        beam = None 
+                        bird.change_img(6, screen)  # こうかとんが喜ぶエフェクト
+                        score.score += 1
+                        break
+
+            bombs = [bomb for bomb in bombs if bomb is not None]
+            beams = [beam for beam in beams if beam is not None]
+
+
+            key_lst = pg.key.get_pressed()
+            bird.update(key_lst, screen) 
+            for beam in beams:  # ビームが存在するときだけ
+                beam.update(screen)
+                if (beam.rct.left < 0) or (beam.rct.top < 0) or (WIDTH < beam.rct.right) or (HEIGHT < beam.rct.bottom):
+                    del beam 
+                
+            for bomb in bombs:
+                bomb.update(screen)
+            score.update(screen)
+            pg.display.update() 
+            tmr += 5
+            clock.tick(50)
 
 
 if __name__ == "__main__":
