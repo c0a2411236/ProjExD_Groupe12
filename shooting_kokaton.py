@@ -145,25 +145,66 @@ class Score:
     """
     スコアの表示に関するクラス
     """
-    def __init__(self,):
+    def __init__(self):
         """
         爆弾を撃ち落とした回数のスコア表示
+        最高スコアを表示
         """
         self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
-        self.color = (0, 0, 255)
+        self.now_color = (0, 0, 255)
         self.score = 0
-        self.img = self.fonto.render(f"score:{self.score}", 0, self.color)
-        self.rct = self.img.get_rect()
-        self.rct.center = (100, HEIGHT-50)
+        self.now_img = self.fonto.render(f"score:{self.score}", 0, self.now_color)  # 現在の点数
+        self.now_rct = self.now_img.get_rect()
+        self.now_rct.center = (100, HEIGHT-50)
+
+        self.high_color = (255, 0, 0)
+        self.fileobj = open(file = "score.txt", mode = "r", encoding = "utf-8")  # スコア記録ファイルを開く
+        self.txt = self.fileobj.read()
+        self.fileobj.close()
+        if self.txt == '':
+            self.fileobj = open("score.txt", "w", encoding="utf-8")
+            self.fileobj.write("0")
+            self.fileobj.close()
+        self.fileobj = open("score.txt", "r", encoding="utf-8")
+        self.high_score = int(self.fileobj.read())
+        self.fileobj.close()
+
+        self.high_img = self.fonto.render(f"high score:{self.high_score}", 0, self.high_color)  # 最高点数
+        self.high_rct = self.high_img.get_rect()
+        self.high_rct.center = (100, HEIGHT - 70)
+
+        self.new_fonto = pg.font.SysFont("fantasy", 45)
+        self.new_color = (255, 255, 0)
+        self.new_img = self.new_fonto.render("New Record!", 0, self.new_color)  # 更新時
+        self.new_rct = self.new_img.get_rect()
+        self.new_rct.center = (100, HEIGHT - 90)
     
     def update(self, screen: pg.Surface):
         """
         スコアの変動を描画する
+        最高スコアを描画する
+        最高スコアの更新を伝える
         引数 screen：画面Surface
         """
-        self.img = self.fonto.render(f"score:{self.score}", 0, self.color)
-        screen.blit(self.img, self.rct)   
-           
+        self.score += 1
+        self.now_img = self.fonto.render(f"score:{self.score}", 0, self.now_color)
+        screen.blit(self.now_img, self.now_rct)
+
+        if self.high_score < self.score:
+            self.high_score = self.score  # 最高スコアを更新
+            screen.blit(self.new_img, self.new_rct)
+        self.fileobj = open("score.txt", "w", encoding="utf-8")
+        self.fileobj.write(f"{self.high_score}")
+        self.fileobj.close()
+        self.high_img = self.fonto.render(f"high score:{self.high_score}", 0, self.high_color)
+        screen.blit(self.high_img, self.high_rct)
+
+    def score_reset(self, screen: pg.Surface):
+        """
+        記録している最高スコアをリセットする
+        """
+        self.high_score = 0
+        
 
 class Explosion:
     """
@@ -209,10 +250,13 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+            if event.type == pg.KEYDOWN and event.key == pg.K_r:  # rキーで最高スコアをリセット
+                score.score_reset(screen)  # 二重whileループの外側に入れる
+                
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:  # これは二重whileループの内側
                 # スペースキー押下でBeamクラスのインスタンス生成
                 # beam = Beam(bird)
-                beams.append(Beam(bird)) 
+                beams.append(Beam(bird))
 
         screen.blit(bg_img, [-tmr, 0])
         if (tmr >= 500):
