@@ -178,6 +178,18 @@ class Score:
         self.new_img = self.new_fonto.render("New Record!", 0, self.new_color)  # 更新時
         self.new_rct = self.new_img.get_rect()
         self.new_rct.center = (100, HEIGHT - 90)
+
+        self.check_fonto = pg.font.SysFont("hgp創英角ポップ体", 50)
+        self.check_img = self.check_fonto.render("Your best score has been reset!", True, (255, 255, 255), (0,0,0))  # 最高スコアリセット通知
+        self.check_rct = self.check_img.get_rect()
+        self.check_rct.center = (WIDTH//2, HEIGHT//2)
+
+        self.kokaton_img = pg.transform.rotozoom(pg.image.load("fig/8.png"), 0, 1)   # リセット通知時のこうかとん画像
+        self.kokaton_rct1 = self.kokaton_img.get_rect()
+        self.kokaton_rct2 = self.kokaton_img.get_rect()
+        self.kokaton_rct1.center = (WIDTH//2 - 290, HEIGHT//2)
+        self.kokaton_rct2.center = (WIDTH//2 + 290, HEIGHT//2)
+
     
     def update(self, screen: pg.Surface):
         """
@@ -202,8 +214,15 @@ class Score:
     def score_reset(self, screen: pg.Surface):
         """
         記録している最高スコアをリセットする
+        最高スコアリセットを知らせる
         """
         self.high_score = 0
+        self.check_img = self.check_fonto.render("Your best score has been reset!", True, (255, 255, 255), (0,0,0))
+        screen.blit(self.check_img, self.check_rct)
+        screen.blit(self.kokaton_img, self.kokaton_rct1)
+        screen.blit(self.kokaton_img, self.kokaton_rct2)
+        pg.display.update()
+        time.sleep(1.5)
         
 
 class Explosion:
