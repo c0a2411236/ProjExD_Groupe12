@@ -198,7 +198,6 @@ class Score:
         最高スコアの更新を伝える
         引数 screen：画面Surface
         """
-        self.score += 1
         self.now_img = self.fonto.render(f"score:{self.score}", 0, self.now_color)
         screen.blit(self.now_img, self.now_rct)
 
