@@ -204,7 +204,31 @@ def main():
     score = Score()
     clock = pg.time.Clock()
     tmr = 0
-    tick = 50  # 難易度easyの速度
+    tick_list = [50, 75, 100]  
+    l = 0 # 難易度easyの速度
+    # ラジオボタンのデータ
+    options = ["EASY", "NORMAL", "HARD"]
+    radio_buttons = []
+    selected_index = 0
+    # ラジオボタンの位置と半径を設定
+    start_y = 200
+    radius = 20
+    spacing = 125
+
+    for l, option in enumerate(options):
+        center = (465, start_y + l * spacing)
+        radio_buttons.append({"label": option, "center": center})
+
+    def draw_radio_button(screen, center, selected):
+        # 外円
+        pg.draw.circle(screen, (0, 0, 0), center, radius, 2)
+        if selected:
+            # 内円（選択時）
+            pg.draw.circle(screen, (0, 0, 0), center, radius - 4)
+
+    def draw_options():
+        for l, btn in enumerate(radio_buttons):
+            draw_radio_button(screen, btn["center"], l == selected_index)
     state = "START"  # 実行時にスタート画面を表示する
 
     while True: 
@@ -217,6 +241,8 @@ def main():
                     return
                 if event.type == pg.KEYDOWN and event.key == pg.K_q:
                     state = "EXPLANATION"  # ゲーム説明を表示
+                if event.type == pg.KEYDOWN and event.key == pg.K_d:
+                    state = "DIFFICULTY"  # ゲーム説明を表示
                 if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                     state = "PLAY"  # ゲーム本編へ
 
@@ -231,12 +257,14 @@ def main():
             title_txt = font_title.render("シューティングこうかとん（仮）", True, (255, 255, 255))   
             start_txt = font_select.render("Enter：ゲームスタート", True, (255, 255, 255))
             explanation_txt = font_select.render("Q：このゲームについて", True, (255, 255, 255))
+            difficulty_txt = font_select.render("D：難易度選択", True, (255, 255, 255))
             end_txt = font_select.render("Esc：ゲームを終了する", True, (255, 255, 255))
             high_score_txt = font_score.render(f"ハイスコア：{score.high_score}", True, (255, 255, 255))
             screen.blit(title_txt, [HEIGHT//2-200, WIDTH//2-450])
             screen.blit(start_txt, [HEIGHT//2-200, WIDTH//2-280])
             screen.blit(explanation_txt, [HEIGHT//2-200, WIDTH//2-210])
-            screen.blit(end_txt, [HEIGHT//2-200, WIDTH//2-140])
+            screen.blit(difficulty_txt, [HEIGHT//2-200, WIDTH//2-140])
+            screen.blit(end_txt, [HEIGHT//2-200, WIDTH//2-70])
             screen.blit(high_score_txt, [HEIGHT//2+500, WIDTH//2+50])
             
             pg.display.update()
@@ -258,40 +286,96 @@ def main():
             font_score = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 25)
             title_txt = font_title.render("シューティングこうかとん（仮）", True, (255, 255, 255))   
             start_txt = font_select.render("Enter：ゲームスタート", True, (255, 255, 255))
-            explanation_txt = font_select.render("Q：遊び方説明", True, (255, 255, 255))
+            explanation_txt = font_select.render("Q：このゲームについて", True, (255, 255, 255))
+            difficulty_txt = font_select.render("D：難易度選択", True, (255, 255, 255))
             end_txt = font_select.render("Esc：ゲームを終了する", True, (255, 255, 255))
             high_score_txt = font_score.render(f"ハイスコア：{score.high_score}", True, (255, 255, 255))
             screen.blit(title_txt, [HEIGHT//2-200, WIDTH//2-450])
             screen.blit(start_txt, [HEIGHT//2-200, WIDTH//2-280])
             screen.blit(explanation_txt, [HEIGHT//2-200, WIDTH//2-210])
-            screen.blit(end_txt, [HEIGHT//2-200, WIDTH//2-140])
+            screen.blit(difficulty_txt, [HEIGHT//2-200, WIDTH//2-140])
+            screen.blit(end_txt, [HEIGHT//2-200, WIDTH//2-70])
             screen.blit(high_score_txt, [HEIGHT//2+500, WIDTH//2+50])
 
             # ゲーム説明画面描画
-            if state == "EXPLANATION":
-                pg.draw.rect(screen,(255,255,255),pg.Rect(175,40,750,570),0,border_radius=15)
-                font_exp_title = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 40)
-                font_exp = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
-                font_list = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 25)
-                exp_title_txt = font_exp_title.render("遊び方", True, (0, 0, 0))
-                exp_txt1 = font_exp.render("・方向キーで移動", True, (0, 0, 0))
-                exp_txt2 = font_exp.render("・スペースキーでビーム攻撃", True, (0, 0, 0))
-                exp_txt3 = font_exp.render("・スコアリスト", True, (0, 0, 0))
-                exp_list1 = font_list.render("爆弾 ... １点", True, (0, 0, 0))
-                exp_list2 = font_list.render("敵機 ... １０点", True, (0, 0, 0))
-                exp_list3 = font_list.render("ボス ... １００点", True, (0, 0, 0))
-                exp_txt4 = font_exp.render("Q：タイトルに戻る", True, (0, 0, 0))
-                screen.blit(exp_title_txt,[185,50])
-                screen.blit(exp_txt1,[185,120])
-                screen.blit(exp_txt2,[185,190])
-                screen.blit(exp_txt3,[185,260])
-                screen.blit(exp_list1,[220,310])
-                screen.blit(exp_list2,[220,360])
-                screen.blit(exp_list3,[220,410])
-                screen.blit(exp_txt4,[655,565])
+            pg.draw.rect(screen,(255,255,255),pg.Rect(175,40,750,570),0,border_radius=15)
+            font_exp_title = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 40)
+            font_exp = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
+            font_list = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 25)
+            exp_title_txt = font_exp_title.render("遊び方", True, (0, 0, 0))
+            exp_txt1 = font_exp.render("・方向キーで移動", True, (0, 0, 0))
+            exp_txt2 = font_exp.render("・スペースキーでビーム攻撃", True, (0, 0, 0))
+            exp_txt3 = font_exp.render("・スコアリスト", True, (0, 0, 0))
+            exp_list1 = font_list.render("爆弾 ... １点", True, (0, 0, 0))
+            exp_list2 = font_list.render("敵機 ... １０点", True, (0, 0, 0))
+            exp_list3 = font_list.render("ボス ... １００点", True, (0, 0, 0))
+            exp_txt4 = font_exp.render("Q：タイトルに戻る", True, (0, 0, 0))
+            screen.blit(exp_title_txt,[185,50])
+            screen.blit(exp_txt1,[185,120])
+            screen.blit(exp_txt2,[185,190])
+            screen.blit(exp_txt3,[185,260])
+            screen.blit(exp_list1,[220,310])
+            screen.blit(exp_list2,[220,360])
+            screen.blit(exp_list3,[220,410])
+            screen.blit(exp_txt4,[655,565])
             
             pg.display.update()
 
+        if state == "DIFFICULTY":
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_d:
+                    state = "START"  # スタート画面に戻る
+                elif event.type == pg.MOUSEBUTTONDOWN and event.button == 1:  # 左クリック
+                    mouse_x, mouse_y = event.pos
+                    for l, btn in enumerate(radio_buttons):
+                        cx, cy = btn["center"]
+                        dist_sq = (mouse_x - cx) ** 2 + (mouse_y - cy) ** 2
+                        if dist_sq <= radius ** 2:
+                            selected_index = l
+                            print(f"選択: {options[selected_index]}")
+                            print(selected_index)
+
+            # スタート画面描画
+            start = pg.Surface((WIDTH,HEIGHT))
+            start.fill((0, 0, 0))
+            start.set_alpha(150)
+            screen.blit(start,[0, 0])
+            font_title = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 60)
+            font_select = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 40)
+            font_score = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 25)
+            title_txt = font_title.render("シューティングこうかとん（仮）", True, (255, 255, 255))   
+            start_txt = font_select.render("Enter：ゲームスタート", True, (255, 255, 255))
+            explanation_txt = font_select.render("Q：遊び方説明", True, (255, 255, 255))
+            difficulty_txt = font_select.render("D：難易度選択", True, (255, 255, 255))
+            end_txt = font_select.render("Esc：ゲームを終了する", True, (255, 255, 255))
+            high_score_txt = font_score.render(f"ハイスコア：{score.high_score}", True, (255, 255, 255))
+            screen.blit(title_txt, [HEIGHT//2-200, WIDTH//2-450])
+            screen.blit(start_txt, [HEIGHT//2-200, WIDTH//2-280])
+            screen.blit(explanation_txt, [HEIGHT//2-200, WIDTH//2-210])
+            screen.blit(difficulty_txt, [HEIGHT//2-200, WIDTH//2-140])
+            screen.blit(end_txt, [HEIGHT//2-200, WIDTH//2-70])
+            screen.blit(high_score_txt, [HEIGHT//2+500, WIDTH//2+50])
+
+            # 難易度選択画面描画
+            pg.draw.rect(screen,(255,255,255),pg.Rect(175,40,750,570),0,border_radius=15)
+            font_dif_title = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 50)
+            font_dif = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 50)
+            font_exp = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
+            dif_title_txt = font_dif_title.render("～難易度選択～", True, (0, 0, 0))
+            dif_txt1 = font_dif.render("　Easy", True, (0, 0, 0))
+            dif_txt2 = font_dif.render("　Normal", True, (0, 0, 0))
+            dif_txt3 = font_dif.render("　Hard", True, (0, 0, 0))
+            exp_txt4 = font_exp.render("D：タイトルに戻る", True, (0, 0, 0))
+            screen.blit(dif_title_txt,[375,50])
+            screen.blit(dif_txt1,[450,175])
+            screen.blit(dif_txt2,[450,300])
+            screen.blit(dif_txt3,[450,425])
+            screen.blit(exp_txt4,[655,565])
+            # 難易度選択ラジオボタン
+            draw_options()
+            pg.display.update()
 
         # ゲーム中にescキーを押したら一時停止する
         if state == "STOP":
@@ -368,7 +452,8 @@ def main():
             score.update(screen)
             pg.display.update() 
             tmr += 5
-            clock.tick(tick)
+            print(selected_index)
+            clock.tick(tick_list[selected_index])
 
 
 if __name__ == "__main__":
