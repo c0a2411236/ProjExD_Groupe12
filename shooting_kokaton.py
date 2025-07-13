@@ -151,6 +151,7 @@ class Score:
         self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
         self.color = (0, 0, 255)
         self.score = 0
+        self.high_score = 0
         self.img = self.fonto.render(f"score:{self.score}", 0, self.color)
         self.rct = self.img.get_rect()
         self.rct.center = (100, HEIGHT-50)
@@ -203,22 +204,25 @@ def main():
     score = Score()
     clock = pg.time.Clock()
     tmr = 0
+    tick = 50  # 難易度easyの速度
     state = "START"  # 実行時にスタート画面を表示する
 
-
     while True: 
+        # スタート画面
         if state == "START":
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     return
                 if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                     return
+                if event.type == pg.KEYDOWN and event.key == pg.K_q:
+                    state = "EXPLANATION"  # ゲーム説明を表示
                 if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
-                    state = "PLAY"  # 本編へ
+                    state = "PLAY"  # ゲーム本編へ
 
-        # 描画
+            # スタート画面描画
             start = pg.Surface((WIDTH,HEIGHT))
-            start.fill((150, 255, 255))
+            start.fill((0, 0, 0))
             start.set_alpha(150)
             screen.blit(start,[0, 0])
             font_title = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 60)
@@ -226,35 +230,90 @@ def main():
             font_score = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 25)
             title_txt = font_title.render("シューティングこうかとん（仮）", True, (255, 255, 255))   
             start_txt = font_select.render("Enter：ゲームスタート", True, (255, 255, 255))
-            explanation_txt = font_select.render("Q：操作方法", True, (255, 255, 255))
+            explanation_txt = font_select.render("Q：このゲームについて", True, (255, 255, 255))
             end_txt = font_select.render("Esc：ゲームを終了する", True, (255, 255, 255))
-            high_score_txt = font_score.render("ハイスコア：", True, (255, 255, 255))
+            high_score_txt = font_score.render(f"ハイスコア：{score.high_score}", True, (255, 255, 255))
             screen.blit(title_txt, [HEIGHT//2-200, WIDTH//2-450])
             screen.blit(start_txt, [HEIGHT//2-200, WIDTH//2-280])
             screen.blit(explanation_txt, [HEIGHT//2-200, WIDTH//2-210])
             screen.blit(end_txt, [HEIGHT//2-200, WIDTH//2-140])
             screen.blit(high_score_txt, [HEIGHT//2+500, WIDTH//2+50])
-            pg.display.update()
             
+            pg.display.update()
+        
+        if state == "EXPLANATION":
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_q:
+                    state = "START"  # スタート画面に戻る
 
+            # スタート画面描画
+            start = pg.Surface((WIDTH,HEIGHT))
+            start.fill((0, 0, 0))
+            start.set_alpha(150)
+            screen.blit(start,[0, 0])
+            font_title = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 60)
+            font_select = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 40)
+            font_score = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 25)
+            title_txt = font_title.render("シューティングこうかとん（仮）", True, (255, 255, 255))   
+            start_txt = font_select.render("Enter：ゲームスタート", True, (255, 255, 255))
+            explanation_txt = font_select.render("Q：遊び方説明", True, (255, 255, 255))
+            end_txt = font_select.render("Esc：ゲームを終了する", True, (255, 255, 255))
+            high_score_txt = font_score.render(f"ハイスコア：{score.high_score}", True, (255, 255, 255))
+            screen.blit(title_txt, [HEIGHT//2-200, WIDTH//2-450])
+            screen.blit(start_txt, [HEIGHT//2-200, WIDTH//2-280])
+            screen.blit(explanation_txt, [HEIGHT//2-200, WIDTH//2-210])
+            screen.blit(end_txt, [HEIGHT//2-200, WIDTH//2-140])
+            screen.blit(high_score_txt, [HEIGHT//2+500, WIDTH//2+50])
+
+            # ゲーム説明画面描画
+            if state == "EXPLANATION":
+                pg.draw.rect(screen,(255,255,255),pg.Rect(175,40,750,570),0,border_radius=15)
+                font_exp_title = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 40)
+                font_exp = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
+                font_list = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 25)
+                exp_title_txt = font_exp_title.render("遊び方", True, (0, 0, 0))
+                exp_txt1 = font_exp.render("・方向キーで移動", True, (0, 0, 0))
+                exp_txt2 = font_exp.render("・スペースキーでビーム攻撃", True, (0, 0, 0))
+                exp_txt3 = font_exp.render("・スコアリスト", True, (0, 0, 0))
+                exp_list1 = font_list.render("爆弾 ... １点", True, (0, 0, 0))
+                exp_list2 = font_list.render("敵機 ... １０点", True, (0, 0, 0))
+                exp_list3 = font_list.render("ボス ... １００点", True, (0, 0, 0))
+                exp_txt4 = font_exp.render("Q：タイトルに戻る", True, (0, 0, 0))
+                screen.blit(exp_title_txt,[185,50])
+                screen.blit(exp_txt1,[185,120])
+                screen.blit(exp_txt2,[185,190])
+                screen.blit(exp_txt3,[185,260])
+                screen.blit(exp_list1,[220,310])
+                screen.blit(exp_list2,[220,360])
+                screen.blit(exp_list3,[220,410])
+                screen.blit(exp_txt4,[655,565])
+            
+            pg.display.update()
+
+
+        # ゲーム中にescキーを押したら一時停止する
         if state == "STOP":
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     return
                 if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                     state = "PLAY"
+            # 画面左上に一時停止を表示
             font_stop = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
             stop_txt = font_stop.render("一時停止中...", True, (255, 255, 255))
             screen.blit(stop_txt, [HEIGHT//2-200, WIDTH//2-450])
             pg.display.update()
 
 
+        # ゲーム中の動作
         if state == "PLAY":
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     return
                 if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
-                    state = "STOP"
+                    state = "STOP"  # ecsキーで一時停止
                 if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                     beams.append(Beam(bird)) 
             
@@ -309,7 +368,7 @@ def main():
             score.update(screen)
             pg.display.update() 
             tmr += 5
-            clock.tick(50)
+            clock.tick(tick)
 
 
 if __name__ == "__main__":
