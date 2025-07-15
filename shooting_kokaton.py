@@ -184,22 +184,83 @@ class Score:
     敵機：10点
     """
     def __init__(self):
+        """
+        爆弾を撃ち落とした回数のスコア表示
+        最高スコアを表示
+        """
         self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
-        self.color = (0, 0, 255)
+        self.now_color = (0, 0, 255)
         self.score = 0
-        self.high_score = 0
-        self.img = self.fonto.render(f"score:{self.score}", 0, self.color)
-        self.rct = self.img.get_rect()
-        self.rct.center = (100, HEIGHT-50)
+        self.now_img = self.fonto.render(f"score:{self.score}", 0, self.now_color)  # 現在の点数
+        self.now_rct = self.now_img.get_rect()
+        self.now_rct.center = (100, HEIGHT-50)
+
+        self.high_color = (255, 0, 0)
+        self.fileobj = open(file = "score.txt", mode = "r", encoding = "utf-8")  # スコア記録ファイルを開く
+        self.txt = self.fileobj.read()
+        self.fileobj.close()
+        if self.txt == '':
+            self.fileobj = open("score.txt", "w", encoding="utf-8")
+            self.fileobj.write("0")
+            self.fileobj.close()
+        self.fileobj = open("score.txt", "r", encoding="utf-8")
+        self.high_score = int(self.fileobj.read())
+        self.fileobj.close()
+
+        self.high_img = self.fonto.render(f"high score:{self.high_score}", 0, self.high_color)  # 最高点数
+        self.high_rct = self.high_img.get_rect()
+        self.high_rct.center = (100, HEIGHT - 70)
+
+        self.new_fonto = pg.font.SysFont("fantasy", 45)
+        self.new_color = (255, 255, 0)
+        self.new_img = self.new_fonto.render("New Record!", 0, self.new_color)  # 更新時
+        self.new_rct = self.new_img.get_rect()
+        self.new_rct.center = (100, HEIGHT - 90)
+
+        self.check_fonto = pg.font.SysFont("hgp創英角ポップ体", 50)
+        self.check_img = self.check_fonto.render("Your best score has been reset!", True, (255, 255, 255), (0,0,0))  # 最高スコアリセット通知
+        self.check_rct = self.check_img.get_rect()
+        self.check_rct.center = (WIDTH//2, HEIGHT//2-100)
+
+        self.kokaton_img = pg.transform.rotozoom(pg.image.load("fig/8.png"), 0, 1)   # リセット通知時のこうかとん画像
+        self.kokaton_rct1 = self.kokaton_img.get_rect()
+        self.kokaton_rct2 = self.kokaton_img.get_rect()
+        self.kokaton_rct1.center = (WIDTH//2 - 290, HEIGHT//2-100)
+        self.kokaton_rct2.center = (WIDTH//2 + 290, HEIGHT//2-100)
+
     
     def update(self, screen: pg.Surface):
         """
         スコアの変動を描画する
+        最高スコアを描画する
+        最高スコアの更新を伝える
         引数 screen：画面Surface
         """
-        self.img = self.fonto.render(f"score:{self.score}", 0, self.color)
-        screen.blit(self.img, self.rct)
+        self.now_img = self.fonto.render(f"score:{self.score}", 0, self.now_color)
+        screen.blit(self.now_img, self.now_rct)
 
+        if self.high_score < self.score:
+            self.high_score = self.score  # 最高スコアを更新
+            screen.blit(self.new_img, self.new_rct)
+        self.fileobj = open("score.txt", "w", encoding="utf-8")
+        self.fileobj.write(f"{self.high_score}")
+        self.fileobj.close()
+        self.high_img = self.fonto.render(f"high score:{self.high_score}", 0, self.high_color)
+        screen.blit(self.high_img, self.high_rct)
+
+    def score_reset(self, screen: pg.Surface):
+        """
+        記録している最高スコアをリセットする
+        最高スコアリセットを知らせる
+        """
+        self.high_score = 0
+        self.check_img = self.check_fonto.render("Your best score has been reset!", True, (0,0,0), (255, 255, 255))
+        screen.blit(self.check_img, self.check_rct)
+        screen.blit(self.kokaton_img, self.kokaton_rct1)
+        screen.blit(self.kokaton_img, self.kokaton_rct2)
+        pg.display.update()
+        time.sleep(1.5)
+        
 
 class Explosion(pg.sprite.Sprite):
     """
@@ -371,6 +432,8 @@ def main():
                     state = "EXPLANATION"  # ゲーム説明を表示
                 if event.type == pg.KEYDOWN and event.key == pg.K_d:
                     state = "DIFFICULTY"  # ゲーム説明を表示
+                if event.type == pg.KEYDOWN and event.key == pg.K_r:  # rキーで最高スコアをリセット
+                    score.score_reset(screen)  # 二重whileループの外側に入れる
                 if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                     state = "PLAY"  # ゲーム本編へ
 
