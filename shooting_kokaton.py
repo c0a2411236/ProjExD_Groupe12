@@ -36,24 +36,54 @@ def calc_orientation(org: pg.Rect, dst: pg.Rect) -> tuple[float, float]:
     norm = math.sqrt(x_diff**2+y_diff**2)
     return x_diff/norm, y_diff/norm
 
+
 #pg.sprite.Spriteの追加とそれに応じた書き換え
 class Bird(pg.sprite.Sprite):
     """
     ゲームキャラクター（こうかとん）に関するクラス
     """
+    state = "normal"  # 無敵でない通常状態の変数
+    hyper_life = 0  # 無敵時間の変数
     delta = {  # 押下キーと移動量の辞書
+        pg.K_UP: (0, -1),
+        pg.K_DOWN: (0, +1),
+        pg.K_LEFT: (-1, 0),
+        pg.K_RIGHT: (+1, 0),
         pg.K_UP: (0, -1),
         pg.K_DOWN: (0, +1),
         pg.K_LEFT: (-1, 0),
         pg.K_RIGHT: (+1, 0),
     }
 
+
     def __init__(self, num: int, xy: tuple[int, int]):
         """
         こうかとん画像Surfaceを生成する
         引数1 num：こうかとん画像ファイル名の番号
         引数2 xy：こうかとん画像の位置座標タプル
+        引数1 num：こうかとん画像ファイル名の番号
+        引数2 xy：こうかとん画像の位置座標タプル
         """
+        super().__init__()
+        # self.
+        # self.
+        img0 = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 0.9)
+        img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
+        self.imgs = {
+            (+1, 0): img,  # 右
+            (+1, -1): pg.transform.rotozoom(img, 45, 0.9),  # 右上
+            (0, -1): pg.transform.rotozoom(img, 90, 0.9),  # 上
+            (-1, -1): pg.transform.rotozoom(img0, -45, 0.9),  # 左上
+            (-1, 0): img0,  # 左
+            (-1, +1): pg.transform.rotozoom(img0, 45, 0.9),  # 左下
+            (0, +1): pg.transform.rotozoom(img, -90, 0.9),  # 下
+            (+1, +1): pg.transform.rotozoom(img, -45, 0.9),  # 右下
+        }
+        self.dire = (+1, 0)
+        self.image = self.imgs[self.dire]
+        self.rect = self.image.get_rect()
+        self.rect.center = xy
+        self.speed = 10
         super().__init__()
         # self.
         # self.
@@ -110,7 +140,7 @@ class Bird(pg.sprite.Sprite):
 
 class Bomb(pg.sprite.Sprite):
     """
-    爆弾に関するクラス
+    爆発に関するクラス
     """
     def __init__(self, emy: "Enemy", bird: Bird):
         """
@@ -131,7 +161,8 @@ class Bomb(pg.sprite.Sprite):
 
     def update(self):
         """
-        爆弾を速度ベクトルself.vx, self.vyに基づき移動させる
+        敵機を速度ベクトルself.vyに基づき移動（降下）させる
+        ランダムに決めた停止位置_boundまで降下したら，_stateを停止状態に変更する
         引数 screen：画面Surface
         """
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
@@ -148,12 +179,11 @@ class Bomb(pg.sprite.Sprite):
 
 class Score:
     """
-    スコアの表示に関するクラス
+    打ち落とした爆弾，敵機の数をスコアとして表示するクラス
+    爆弾：1点
+    敵機：10点
     """
-    def __init__(self,):
-        """
-        爆弾を撃ち落とした回数のスコア表示
-        """
+    def __init__(self):
         self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
         self.color = (0, 0, 255)
         self.score = 0
@@ -173,7 +203,7 @@ class Score:
 
 class Explosion(pg.sprite.Sprite):
     """
-    爆発に関するクラス
+    ビームと爆弾が衝突した際に爆発エフェクトを表示するクラス
     """
     def __init__(self, obj: "Bomb|Enemy", life: int):
         """
@@ -256,10 +286,32 @@ class Beam(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.kill()
 
+class Boss(pg.sprite.Sprite):
+    """
+    ボス敵に関するクラス
+    """
+    def __init__(self):
+        super().__init__()
+        img = pg.image.load("fig/alien1.png")
+        self.image = pg.transform.rotozoom(img, 0, 2.5)
+        self.rect = self.image.get_rect(center=(900, -200))
+        self.vy = 2
+        self.hp = 20  # ボスの体力
+        self.attack_interval = 30  # 攻撃間隔
+        self.attack_timer = 0  # タイマー
+        self.state = "entering"  # 状態：登場中 or 停止
+
+    def update(self):
+        if self.rect.centery < 150:
+            self.rect.centery += self.vy
+
+        else:
+            self.state = "stopped"  # 停止状態
+            self.attack_timer += 1
 
 def main():
     pg.display.set_caption("シューティングこうかとん")
-    screen = pg.display.set_mode((WIDTH, HEIGHT))
+    screen = pg.display.set_mode((WIDTH, HEIGHT))    
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bg_img2 = pg.transform.flip(bg_img, True, False)
     bg_img3 = bg_img
@@ -270,8 +322,13 @@ def main():
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
 
+    boss = None  # ボスインスタンス
+    boss_group = pg.sprite.Group()
+    boss_spawned = False  # ボス出現フラグ
+
     tmr = 0
     x = 0
+
     clock = pg.time.Clock()
 
     tick_list = [50, 75, 100]  
@@ -492,6 +549,46 @@ def main():
                 score.score += 10  # 10点アップ
                 bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
+            if score.score >= 50 and not boss_spawned:
+                boss = Boss()
+                boss_group.add(boss)
+                boss_spawned = True
+
+            if boss is not None:
+                for beam in pg.sprite.spritecollide(boss, beams, True):
+                    boss.hp -= 1
+                    if boss.hp <= 0:
+                        exps.add(Explosion(boss, 100))
+                        boss.kill()
+                        boss = None
+                        score.score += 100  # ボス撃破で+100点
+                        bird.change_img(6, screen)  # 喜びエフェクト
+            
+            if boss is not None:
+                if bird.rect.colliderect(boss.rect):
+                    bird.change_img(8, screen)
+                    score.update(screen)
+                    pg.display.update()
+                    time.sleep(2)
+                    score = Score()
+                    bird = Bird(3, (900, 400))
+                    bombs = pg.sprite.Group()
+                    beams = pg.sprite.Group()
+                    exps = pg.sprite.Group()
+                    emys = pg.sprite.Group()
+                    boss = None  # ボスインスタンス
+                    boss_group = pg.sprite.Group()
+                    boss_spawned = False  # ボス出現フラグ
+                    boss_group.update()
+                    boss_group.draw(screen)
+                    tmr = 0
+                    
+            
+            if  boss is not None and boss.state == "stopped":
+                if boss.attack_timer >= boss.attack_interval:
+                    bombs.add(Bomb(boss, bird))  # ボスから爆弾発射
+                    boss.attack_timer = 0  # タイマーリセット
+
             for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクト
                 score.score += 1  # 1点アップ
@@ -511,6 +608,11 @@ def main():
                 beams = pg.sprite.Group()
                 exps = pg.sprite.Group()
                 emys = pg.sprite.Group()
+                boss = None  # ボスインスタンス
+                boss_group = pg.sprite.Group()
+                boss_spawned = False  # ボス出現フラグ
+                boss_group.update()
+                boss_group.draw(screen)
                 tmr = 0
                     
             for emy in pg.sprite.spritecollide(bird, emys, True):  # こうかとんと衝突した敵リスト
@@ -528,6 +630,11 @@ def main():
                 beams = pg.sprite.Group()
                 exps = pg.sprite.Group()
                 emys = pg.sprite.Group()
+                boss = None  # ボスインスタンス
+                boss_group = pg.sprite.Group()
+                boss_spawned = False  # ボス出現フラグ
+                boss_group.update()
+                boss_group.draw(screen)
                 tmr = 0
 
                 # key_lst = pg.key.get_pressed()
@@ -549,13 +656,12 @@ def main():
             exps.update()
             exps.draw(screen)
             score.update(screen)
+            boss_group.update()
+            boss_group.draw(screen)
             pg.display.update() 
             tmr += 1
             x += 4
-            print(selected_index)
             clock.tick(tick_list[selected_index])
-        
-
 
 if __name__ == "__main__":
     pg.init()
