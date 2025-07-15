@@ -277,10 +277,10 @@ class Boss(pg.sprite.Sprite):
         super().__init__()
         img = pg.image.load("fig/alien1.png")
         self.image = pg.transform.rotozoom(img, 0, 2.5)
-        self.rect = self.image.get_rect(center=(WIDTH//2, -100))
+        self.rect = self.image.get_rect(center=(900, -200))
         self.vy = 2
         self.hp = 20  # ボスの体力
-        self.attack_interval = 50  # 攻撃間隔
+        self.attack_interval = 30  # 攻撃間隔
         self.attack_timer = 0  # タイマー
         self.state = "entering"  # 状態：登場中 or 停止
 
