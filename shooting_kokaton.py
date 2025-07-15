@@ -216,6 +216,7 @@ class Score:
         self.new_img = self.new_fonto.render("New Record!", 0, self.new_color)  # 更新時
         self.new_rct = self.new_img.get_rect()
         self.new_rct.center = (100, HEIGHT - 90)
+        self.new_state = 0
 
         self.check_fonto = pg.font.SysFont("hgp創英角ポップ体", 50)
         self.check_img = self.check_fonto.render("Your best score has been reset!", True, (255, 255, 255), (0,0,0))  # 最高スコアリセット通知
@@ -241,6 +242,9 @@ class Score:
 
         if self.high_score < self.score:
             self.high_score = self.score  # 最高スコアを更新
+            self.new_state = 1
+
+        if self.new_state == 1:
             screen.blit(self.new_img, self.new_rct)
         self.fileobj = open("score.txt", "w", encoding="utf-8")
         self.fileobj.write(f"{self.high_score}")
