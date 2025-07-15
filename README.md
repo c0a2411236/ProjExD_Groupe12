@@ -1,5 +1,7 @@
 # シューティングこうかとん（仮）
 
+![title](fig/game_ss.png)
+
 ## 実行環境の必要条件
 * python >= 3.13.2
 * pygame >= 2.6.1
